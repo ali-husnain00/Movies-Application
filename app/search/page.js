@@ -59,7 +59,7 @@ export default function SearchPage() {
       {/* Heading */}
       <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-6 flex items-center gap-2 break-words">
         <SearchIcon className="w-8 h-8 md:w-10 md:h-10 text-red-500" />
-        Search results for "{query}"
+        Search results for &quot;{query}&quot;
       </h3>
 
       {/* Grid */}
