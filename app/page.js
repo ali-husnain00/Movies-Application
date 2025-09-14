@@ -1,103 +1,114 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import CustomSidebar from "@/components/app-sidebar";
+import MovieSlider from "@/components/slider";
+import Navbar from "@/components/navbar";
+import MovieSection from "@/components/moviesSection";
+import MovieCard from "@/components/movieCard";
+import { Star, Flame, Eye, Film } from "lucide-react";
+import Loading from "./loading";
+
+export default function Page() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [topRated, setTopRated] = useState([]);
+  const [trending, setTrending] = useState([]);
+  const [popular, setPopular] = useState([]);
+  const [allMovies, setAllMovies] = useState([]);
+  const [loading, setLoading] = useState(true); 
+
+  useEffect(() => {
+    const fetchMovies = async () => {
+      try {
+        const top = await fetch("/api/movies?category=top_rated").then((r) =>
+          r.json()
+        );
+        const trend = await fetch("/api/movies?category=trending").then((r) =>
+          r.json()
+        );
+        const pop = await fetch("/api/movies?category=popular").then((r) =>
+          r.json()
+        );
+
+        setTopRated(top.results?.slice(0, 10) || []);
+        setTrending(trend.results?.slice(0, 10) || []);
+        setPopular(pop.results?.slice(0, 10) || []);
+        setAllMovies(pop.results?.slice(0, 12) || []);
+      } catch (error) {
+        console.error("Error fetching movies:", error);
+      } finally {
+        setLoading(false); 
+      }
+    };
+    fetchMovies();
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsOpen(true);
+      } else {
+        setIsOpen(false);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  if (loading) {
+    return <Loading/>
+  }
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex bg-[#101114] min-h-screen overflow-x-hidden">
+      {/* Sidebar */}
+      <CustomSidebar isOpen={isOpen} setIsOpen={setIsOpen} />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Main Content */}
+      <main
+        className={`flex flex-col flex-1 transition-all duration-300 min-w-0 ${
+          isOpen && window.innerWidth >= 1024 ? "lg:ml-64" : "ml-0"
+        }`}
+      >
+        <Navbar onMenuClick={() => setIsOpen(!isOpen)} />
+
+        {/* Content */}
+        <div className="flex flex-col w-full overflow-x-hidden">
+          <div className="w-full">
+            <MovieSlider />
+          </div>
+
+          <div className="flex flex-col gap-3 md:gap-6 py-6">
+            <MovieSection
+              title="Top Rated"
+              movies={topRated}
+              icon={<Star className="w-6 h-6 text-yellow-400 mr-2" />}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <MovieSection
+              title="Trending Now"
+              movies={trending}
+              icon={<Flame className="w-6 h-6 text-red-500 mr-2" />}
+            />
+            <MovieSection
+              title="Popular Movies"
+              movies={popular}
+              icon={<Eye className="w-6 h-6 text-blue-400 mr-2" />}
+            />
+          </div>
+
+          <div className="flex flex-col gap-4 mt-5 px-4 mb-10">
+            <h2 className="text-white text-xl md:text-2xl font-bold flex items-center gap-2">
+              <Film className="w-6 h-6 text-purple-400" /> All Movies
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-items-center">
+              {allMovies.map((movie) => (
+                <MovieCard movie={movie} key={movie.id} />
+              ))}
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
